@@ -1,0 +1,7 @@
+# CSC111 Winter 2021 (Final Project): Python libraries to run the file.
+
+# Testing and code checking
+python-ta~=1.6.3
+
+# Graphics and data visualization
+folium~=0.10.1

@@ -1,0 +1,384 @@
+\documentclass[fontsize=11pt]{IEEEtran}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage[normalem]{ulem}
+\usepackage{soul}
+\usepackage{array}
+\usepackage{amssymb}
+\usepackage{extarrows}
+\usepackage{graphicx}
+\usepackage[
+    backend=biber,
+    style=numeric,
+  ]{biblatex}\addbibresource{bibliography.bib}
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\Medium\bfseries}{\thesection}{1em}{}
+
+\usepackage{subfig}
+\usepackage{wrapfig}
+\usepackage{wasysym}
+\usepackage{enumitem}
+\usepackage{adjustbox}
+\usepackage{ragged2e}
+\usepackage[svgnames,table]{xcolor}
+\usepackage{tikz}
+\usepackage{longtable}
+\usepackage{changepage}
+\usepackage{setspace}
+\usepackage{hhline}
+\usepackage{multicol}
+\usepackage{tabto}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{fancyhdr}
+\usepackage[toc,page]{appendix}
+\usepackage[hidelinks]{hyperref}
+\usetikzlibrary{shapes.symbols,shapes.geometric,shadows,arrows.meta}
+\tikzset{&gt;={Latex[width=1.5mm,length=2mm]}}
+\usepackage{flowchart}\usepackage[paperheight=11.0in,paperwidth=8.5in,left=1.0in,right=1.0in,top=1.0in,bottom=1.0in,headheight=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\newpage
+\title{\textbf{Optimizing Route Navigation In London}}
+\author{Aditya Shankar Sarma Peri, Aakash Vaithyanathan, Nazanin Ghazitabatabai, Praket Kanaujia}  \\
+
+
+\begin{document}
+\maketitle
+
+\section{\textbf{Introduction}}
+A booming population and an increase in the number of automobiles on the road is causing an increase in road traffic worldwide, which is most notably seen in large/major cities and is severely worsened during rush hours. The lack of factoring in of this traffic data is a limitation of many apps that are designed to find the optimal route in order to save the time of the user. This issue is important as increasing traffic jams all over the world is not only leading to delayed times while travelling from one location to another but it is also leading to increasing petrol/diesel consumption which is causing an increase in air pollution and thus, worsening air conditions in many cities.\\
+
+The two most-used applications are Waze and Google Maps which are able to accurately direct their users using crowd sourced information, which is the use of the internet to divide  work  between  participants to reach a cumulative result.\cite{1} The users share their information about map data, traffic jams, time, road accidents, speed, and police traps. The data is collected by the server and is used to alert other users to the conditions awaiting them through updating the routes and traffic jams.\\
+
+While we ourselves cannot use crowd sourced information and update the data in real time, we can however incorporate the aspect of traffic into our program in order to find the most optimal route based on whether the user wants an optimal route in terms of distance, time and most direct. Thus, our goal is to have an application that can assist the client by showing them the best route to take, factoring in whether the client wants the fastest route, the shortest in terms of length or the most direct. We will then visualize the  best  possible paths to take, for different means of transportation along with their travel time. \\
+
+The question we want to analyze is :\\ \\ \textbf{\textit{How can we identify the different possible routes a user can take to reach a specific destination? Furthermore, how can this path chosen be optimized based on factors such as mode of transport and traffic volume?}}
+
+\section{Dataset Description}
+The dataset used for this purpose is a CSV file  extracted from data.gov.uk (The department of Transport). The CSV file contains the data pertaining to all the roads in the United Kingdom, from the year 2000 to 2019. A sample of the original dataset is attached below :
+\begin{center}
+\includegraphics[width=0.6\textwidth]{pics/original.png}
+\end{center}
+\begin{enumerate}
+   \item[a.] Some of the important data columns in the dataset are, start junction , end junction , latitude and longitude, pedal cycles and all motor vehicles. \\
+
+   \item[b.]  The start junction column essentially refers to the name of the junction where the road begins and the end junction column refers to the corresponding end junction of the given road. Furthermore, link length refers to the distance between the start and end junctions, i.e  the length of the road\\
+
+   \item[c.]The latitude and longitude together constitute the  location of the start junction. Furthermore, pedal cycles and all motor vehicles respectively represent  the average number of pedal cycles and motor vehicles  passing through the road in 1 day. \\
+
+
+One thing to note here is that the data in this dataset is repetitive as it contains information pertaining to the road system for every single year , starting from 2000 (through to 2019). Furthermore, only the data columns mentioned above are relevant to our computations. Hence, we have filtered our dataset accordingly.\\
+\end{enumerate}
+\newpage
+This is what the filtered dataset looks like : \\
+
+\begin{left}
+\includegraphics[width=0.48\textwidth, left]{pics/filtered.png}
+\end{left}
+
+\section{Computational Overview}
+\\
+
+In this project we have used  the graph data structure to represent the entire system of roads,  which has been implemented as its own data class. Each vertex  represents a junction. The vertex object is named as \textit{‘Junction’} and the graph object is named as  \textit{‘RoadSystem’}. If two junctions are adjacent to one another, then it implies that there is a road between them.  \\
+\\
+Each junction item has a \textit{‘name’} and a \textit{‘neighbours’} attribute. The \textit{‘name’} attribute is a string which represents the starting point of the junction. The \textit{‘neighbours’} attribute  essentially is a dictionary which maps the  neighbouring junctions to a tuple. This tuple consists of two elements, the first one refers distance between the two junctions (in km), and the second element is a  list of integers, where the first integer represents the number of bicycles and the second integer represents the number of motor vehicles. \\  \\
+\textit{Note}: Some of the methods of the \textit{‘RoadSystem’} data class are analogous to what we have learned in the class. The method \textit{‘add\_junction’} adds a junction onto the RoadSystem and this is similar to the method \textit{‘add\_vertex’} from the lectures. The method \textit{‘add\_road’} adds a road between two neighbouring junctions and this is conceptually the same as  the \textit{‘add\_edge’} method from lectures. \cite{2} \\
+\\
+In order to load data from the CSV file into the graph object we have implemented the top level function \textit{‘load\_graph()’}. Furthermore, we have implemented another top level function named \textit{‘load\_dict()’}, this function Reads file\_name and returns a dictionary where the keys are the start junctions and the values are a list of dictionaries. Each dictionary contains the keys road name, end junction,  latitude, longitude, pedal cycle, distance, and all motor vehicles with their corresponding value. This function helps us retrieve data whenever need be without having to read the csv file over and over again.
+\\ \\
+Furthermore, for this project we have performed 5 different computations.
+\\
+
+\begin{enumerate}
+   \item[a.] \textbf{\textit{Multiple Paths}}
+\\
+   The multiple\_path method essentially asks the user to input the names of the start and end junctions. This method has another parameter 'n' which essentially refers to the number of distinct paths the user seeks from the program. Further, the  multiple\_path method  generates  n random paths using a helper method named find\_path. The find\_path method essentially helps in finding a random path between the start and end junctions and is conceptually very similar to the methods we have learned in lectures. \\
+   \\
+   Note: In the event where the total number of distinct path between the two junctions is less than n, the functions outputs the maximum number of distinct paths possible.
+\\
+   \item[b.] \textbf{\textit{Shortest Path}}\\
+   It is always good  to be aware of the different paths we could take while travelling from one place to another. However, in most cases  we look for the path with the shortest distance. This is exactly what this method does. It helps the user find the shortest path in terms of distance between the two junctions of the user's choice. Our first way of approaching this problem was to find all the possible paths between the start and end junctions and then further computing the path which had the shortest distance. However, this was computationally very inefficient. Hence, in order to solve this problem we implemented our coded version of \textit{Dikshitra's algorithm}. \cite{3} \\
+   \\
+   First it sets the distance of all other nodes from junction1\_name to infinity. All the nodes are added to unvisited. Until junction2\_name is in unvisited, the for loop will go through the vertices in unvisited and will find the vertex whose distance from junction1\_name is less than the distance of  between the first vertex in unvisited and junction1\_name. Looping through the vertex’s neighbor, if the distance between the vertex and the neighbor + distance vertex from junction1\_name is less than the distance of neighbor and junction1\_name, then the distance of the neighbor will be set to that value. In the end we will append the vertices in the correct order to path and return it with its distance.
+\\
+   \item[c.] \textbf{\textit{Direct Route}}\\
+   Sometimes the shortest route may not be the most direct route between two junctions. For instance, there are three start junctions 'A', 'B', 'C'. Let's assume that 'A' is adjacent to both 'B' and 'C'.  Let the distance between 'A' and 'B' be 4 km , and 'A' and 'C' be 1 km. Furthermore, let the distance between 'B' and 'C'  be 2 km. Therefore, in principle, the shortest path between 'A' to 'B' would be 'A -> B -> C'. However, in most cases the user would find it more convenient to travel through the direct edge between 'A' and 'B' despite the fact that it isn't necessarily the shortest route . This is exactly what this algorithm computes. It computes the most direct path between the start and end junctions. In order to carry out this computation we have used our own coded version of the \textit{Breadth First Search Algorithm}.\cite{4} \cite{5} \\
+   \\
+   Using the BFS algorithm, start will be added to the queue list and while queue is not empty, path is set to the first element of queue, and node will be set to the last element of the path. Then looping over the neighbors of node, we will append them to the path and add the new path to queue. In each iteration if neighbor.name = end, then we will return the new path right away along with its distance.
+ \\
+   \item[d.] \textbf{\textit{Time Taken Between Junctions}}\\
+   This computation calculates the time it takes to travel between two junctions , based on the mode of transport and based on the amount of traffic that is on the road. It uses a mathematical formula that relates traffic flow and traffic speed to traffic density \cite{6}:
+   \[
+    \text{traffic flow} = \frac{\text{number of daily vehicles}}{24}
+   \]
+   \[
+   \text{traffic density} = \frac{\frac{\text{traffic flow}}{60}}{\text{distance of the road}}
+   \]
+   \[
+   \text{speed} = \frac{\text{traffic flow}}{\text{traffic density}}
+   \]
+   \[
+   \text{time} = \frac{\text{distance of the road}}{\text{speed}}
+   \]
+\newpage
+   \item[e.] \textbf{\textit{Paths With Shortest Time}}\\
+   The path\_with\_shortest\_time calculates the shortest time it takes to reach from one location to another, taking traffic conditions into account, by calculating the time taken for multiple paths, that are given by the output of the multiple\_path function. This is achieved through calling the time\_taken\_between\_junctions method for each start and end junction for each path. The time taken and the paths are stored in lists and by taking the minimum of the list, we can find the path that is the fastest in terms of time. the result is outputted as a tuple which gives the path, the time taken and the distance of the path, in that order.
+\section{Visualizations}
+
+Based on the above described computations, there are 5 possible visualizations that the user can view representing the various relationships between the different road junctions in a interactive manner.
+\subsection*{A. Visualizing Multiple Paths}
+For representing our data, we use the \textbf{folium library} \cite{7}. \\ \\
+The \textit{visualize\_multiple\_path()} plots a map of the London region with the specified London coordinates for this map. The function extracts all the possible paths that the user has requested for with the help of the \textit{multiple\_path()} under the \textbf{computations.py} file. \\ \\
+With the help of the following helpers :
+\begin{enumerate}
+    \item[a.] \textit{helper\_plot\_markers() -- for plotting the markers for each junction}\\
+    \item[b.] \textit{helper\_road\_road\_link() -- for plotting a road link between every 2 connected junctions in a path} \\
+\end{enumerate}
+ the function updates the state of the \textbf{plot\_map} variable to make a complete map. \\ \\
+Based on the inputs given by the user, if there exists a path between the specified junctions, a map will successfully be generated. If no such path exists based on the requirements specified by the user, a message will be displayed indicating to them that the plot could not be made. \\
+To view the generated map, the user must open the \textit{multiple\_routes.html} file found under the \textbf{Plots\_Generated} folder of the main project file.
+\newpage
+ The function makes use of two main methods from the folium library:
+ \begin{enumerate}
+     \item[1.] \textit{\textbf{folium.Marker()} -- for plotting the junctions as markers. \\
+     \item [2.]\textit{\textbf{folium.Polyline()}-- to plot a link between the 2 junctions in a path}}.
+ \end{enumerate}
+
+\subsection*{Brief Discussion of  Visualizing Multiple Paths}
+We want to visualize \textit{based on the specified inputs, how many unique paths are drawn between the start and end junctions and how do these paths visually represent this connection}.
+\\
+
+\includegraphics[width=0.5\textwidth, right]{{pics/multiple_path_discussion.png}} \\
+
+In the graph displayed above, the different colour markers with \textit{road icons} represent the different individual junctions for all possible paths. The colour coded road links represent the path between the 2 roads. Each unique path is traced with a single colour to represent a complete path. Different unique coloured paths  represent the unique paths generated. \\ \\
+This specific output is achieved by running the following method under \textbf{visualizations.py} :\\ $$\textit{visualize\_multiple\_path('LA Boundary', 'M1 spur', 10)}$$
+
+\subsection*{ B. Visualizing Shortest Path}
+For representing our data, we use the \textbf{folium library}.
+The \textit{visualize\_shortest\_path()} plots a map of the London region with the specified London coordinates for this map. The function extracts the shortest path that the user has requested for with the help of the \textit{shortest\_path()} under the \textbf{computations.py} file. \newpage
+With the help of the following helpers: \begin{enumerate}
+    \item[a.] \textit{helper\_plot\_markers() -- for plotting the markers for each junction} \\
+    \item [b.] \textit{helper\_plot\_shortest\_marker() -- for plotting the markers specific for the shortest path.} \\
+    \item[c.]
+    \textit{helper\_plot\_shortest\_road\_links()--for plotting the road link between junctions in the shortest path} \\
+    \item[d.]
+    \textit{helper\_road\_road\_link() -- for plotting a road link between every 2 connected junctions in a path other than the shortest path}. \\
+\end{enumerate} \\
+the function updates the state of the \textbf{plot\_map} variable to make a complete map. \\ \\
+Based on the inputs given by the user for the start and end junctions, if there exists a shortest path between the specified junctions, a map will successfully be generated. If no such path exists based on the requirements specified by the user, a message will be displayed indicating to them that the plot could not be made. \\
+To view the generated map, the user must open the \textit{shortest\_route.html} file found under the \textbf{Plots\_Generated} folder of the main project file.
+ \\ \\
+ The function makes use of two main methods from the folium library :
+ \begin{enumerate}
+     \item[1.] \textit{\textbf{folium.Marker()} -- for plotting the junctions as markers. \\
+     \item[2.] \textit{\textbf{folium.Polyline()}-- to plot a link between the 2 junctions in a path}}.
+ \end{enumerate}
+
+\subsection*{Brief Discussion of Visualizing Shortest path}
+We want to visualize \textit{based on the specified inputs, what is the shortest path that the user can obtain between the two junctions. Further, how can this path be visually represented}.
+\\
+
+\includegraphics[width=0.5\textwidth, right]{{pics/shortest_route_discussion.png}} \\
+
+In the graph displayed above, the different colour markers with \textit{road icons} represent the different individual junctions for all possible paths. The green colour coded road links represent the shortest path between the 2 inputted junctions whereas the red colour coded road link represents an alternate random route between the two junctions. The 2 paths are visually represented to show comparatively how the shortest path compares to any other path generated by the function between the 2 junctions. Each unique path is traced with a single colour to represent a complete path. Different unique coloured paths  represent the unique paths generated as described above \\ \\
+This specific output is achieved by running the following method under \textbf{visualizations.py} :\\ $$\textit{visualize\_shortest\_path('A406', 'LA Boundary', 10)}$$
+
+\subsection*{ C. Visualizing Direct Route}
+For representing our data, we use the \textbf{folium library}. \\ \\
+The \textit{visualize\_direct\_path()} plots a map of the London region with the specified London coordinates for this map. The function extracts the most direct path that the user has requested for with the help of the \textit{direct\_route()} under the \textbf{computations.py} file. \\ \\
+With the help of the following helpers :
+\begin{enumerate}
+    \item[a.] \textit{helper\_plot\_markers() -- for plotting the markers for each junction in the paths obtained other than the direct path} \\
+    \item[b.]
+    \textit{helper\_plot\_shortest\_marker() -- for plotting the markers specific for the junctions in direct path} \\ \item[c.]\textit{helper\_plot\_road\_link() -- for plotting a road link between every 2 connected junctions in a path other than the direct path} \\
+    \item[d.] \textit{helper\_plot\_shortest\_road\_links() -- function for plotting the road link between the two junctions in the direct path} \\
+\end{enumerate} \\
+the function updates the state of the \textbf{plot\_map} variable to make a complete map. \\ \\
+Based on the inputs given by the user for the start and end junctions, if there exists a direct path between the specified junctions, a map will successfully be generated. If no such path exists based on the requirements specified by the user, a message will be displayed indicating to them that the plot could not be made. \\
+To view the generated map, the user must open the \textit{most\_direct\_route.html} file found under the \textbf{Plots\_Generated} folder of the main project file.
+ \\ \\
+ The function makes use of two main methods from the folium library :
+ \begin{enumerate}
+     \item[1.] \textit{\textbf{folium.Marker()} -- for plotting the junctions as markers. \\
+     \item[2.]
+     \textit{\textbf{folium.Polyline()}-- to plot a link between the 2 junctions in a path}}.
+
+ \end{enumerate}
+
+\subsection*{Brief Discussion of Visualizing Direct Route}
+We want to visualize \textit{based on the specified inputs, what is the most direct path that the user can obtain between the two junctions. Further, how can this path be visually represented}.
+\\
+
+\includegraphics[width=0.5\textwidth, center]{{pics/most_direct_route_discussion.png}} \\
+
+In the graph displayed above, the different colour markers with \textit{road icons} represent the different individual junctions for all possible paths. The green colour coded road links represent the most direct path between the 2 inputted junctions whereas the red colour coded road link represents an alternate random route between the two junctions. The 2 paths are visually represented to show comparatively how the most direct path compares to any other path generated by the function between the 2 junctions. Each unique path is traced with a single colour to represent a complete path. Different unique coloured paths  represent the unique paths generated as described above \\ \\
+This specific output is achieved by running the following method under \textbf{visualizations.py} :\\ $$\textit{visualize\_direct\_path('M1 spur', 'LA Boundary')}$$
+
+\subsection*{ D. Visualizing Shortest Time Based Route}
+For representing our data, we use the \textbf{folium library}. \\ \\
+The \textit{visualize\_shortest\_time\_path()} plots a map of the London region with the specified London coordinates for this map. The function extracts the shortest time based path that the user has requested for with the help of the \textit{multiple\_path() and path\_with\_shortest\_time()} under the \textbf{computations.py} file. \\ \\
+With the help of the following helpers  :\\
+\begin{enumerate}
+    \item[a.] \textit{helper\_plot\_shortest\_marker() -- for plotting the markers for each junction in shortest time based path obtained} \\
+    \item[b.]
+    \textit{helper\_plot\_time\_road\_links() -- for plotting a road link between every 2 connected junctions in the shortest time based path} \\
+\end{enumerate}
+
+the function updates the state of the \textbf{plot\_map} variable to make a complete map. \\ \\
+Based on the inputs given by the user for the start junction end junction, and the preferred mode of transportation (\textit{either \textbf{cycle} or \textbf{vehicle}}), if there exists a shortest time path between the specified junctions, a map will successfully be generated. If no such path exists based on the requirements specified by the user, a message will be displayed indicating to them that the plot could not be made. \\
+To view the generated map, the user must open the \textit{shortest\_time\_route.html} file found under the \textbf{Plots\_Generated} folder of the main project file.
+ \\ \\
+ The function makes use of two main methods from the folium library :
+ \begin{enumerate}
+     \item[1.] \textit{\textbf{folium.Marker()} -- for plotting the junctions as markers \\
+     \item[2.]
+     \textit{\textbf{folium.Polyline()}-- to plot a link between the 2 junctions in a path}}.
+ \end{enumerate}
+\newpage
+\subsection*{Brief Discussion of Visualizing Shortest Time Based Route}
+We want to visualize \textit{based on the specified inputs, what is the shortest time based path that the user can obtain between the two junctions. Further, how can this path be visually represented}.
+\\
+
+\includegraphics[width=0.5\textwidth, center]{{pics/shortest_time_discussion.png}} \\
+
+In the graph displayed above, the different colour markers with \textit{road icons} represent the different individual junctions for the shortest time based route as requested by the user. The green colour coded road links represent this path between the 2 inputted junctions where the black marker represents the intermediate junction between the path. Further, upon clicking each junction, the user can obtain the name of the junction and by clicking the name of the junction, the user can obtain the time taken to travel between the two junctions as shown in the graph above. \\ \\
+This specific output is achieved by running the following method under \textbf{visualizations.py} :\\ $$\textit{visualize\_shortest\_time\_path('LA Boundary', 'M1 spur', 'vehicle')}$$
+
+\subsection*{ E. Visualizing Paths With Specific Stops}
+For representing our data, we use the \textbf{folium library}. \\ \\
+The \textit{visualize\_path\_specific\_stops()} plots a map of the London region with the specified London coordinates for this map. The function extracts all the paths between the given junctions and then extracts the path with specific path as requested by the user. The function performs this with the help of \textit{multiple\_path()} under the \textbf{computations.py} file.
+\newpage
+With the help of the following helpers  :\\
+\begin{enumerate}
+    \item[a.] \textit{helper\_plot\_specific\_marker() -- for plotting the markers for each junction in the path with specific requested stops.}
+    \item[b.]\\ \textit{helper\_plot\_shortest\_road\_links() -- for plotting a road link between every 2 connected junctions in the specific stops path.} \\
+\end{enumerate}
+
+the function updates the state of the \textbf{plot\_map} variable to make a complete map. \\ \\
+Based on the inputs given by the user for the start junction end junction, and the preferred number of stops, if there exists a such a path between the specified junctions, a map will successfully be generated. If no such path exists based on the requirements specified by the user, a message will be displayed indicating to them that the plot could not be made. \\
+To view the generated map, the user must open the \textit{path\_with\_specific\_stops.html} file found under the \textbf{Plots\_Generated} folder of the main project file.
+ \\ \\
+ The function makes use of two main methods from the folium library :
+ \begin{enumerate}
+     \item[1.] \textit{\textbf{folium.Marker()} -- for plotting the junctions as markers} \\
+     \item[2.]\textit{\textbf{folium.Polyline()}-- to plot a link between the 2 junctions in a path}.
+ \end{enumerate}
+ \newpage
+\subsection*{Brief Discussion of  Visualizing Path With \\ Specific Stops}
+We want to visualize \textit{based on the specified inputs and the number of stops the user would like to make, can we find such a path?. If yes, how can this path be visually represented}.
+\\
+
+\includegraphics[width=0.5\textwidth, center]{{pics/path_specific_stops_discussion.png}} \\
+
+In the graph displayed above, the different colour markers with \textit{road icons} represent the different individual junctions for the path with specific stops as requested by the user. The green colour coded road links represent this path between the 2 inputted junctions where the black marker represents the intermediate junctions between the path. Further, upon clicking each junction, the user can obtain the name of the junction and by hovering over the road link, they can view the path between the two roads. \\ \\
+This specific output is achieved by running the following method under \textbf{visualizations.py} :\\ $$\textit{visualize\_path\_specific\_stops('A406', 'LA Boundary', 3)}$$
+
+\end{enumerate}
+\newpage
+\section{Instructions}
+
+\begin{enumerate}
+    \item [1.] \textbf{Roads Dataset (Raw and unfiltered)} : Average Annual Daily Flow (AADF) - Major and Minor roads. \cite{8} \href{https://data.gov.uk/dataset/208c0e7b-353f-4e2d-8b7a-1a7118467acc/gb-road-traffic-counts}{Unfiltered Roads Dataset}
+
+        Claim ID: eofPfeu4UQH3P7BZ\\
+        Claim Passcode: H9DE65BFQ6yaN7CD\\
+
+    \textbf{Note: Our Program does not use the original dataset, only the filtered one. It is not required for this dataset to be downloaded for the program to run and is only given as a reference.}
+    \\
+    \item [2.] \textbf{Final Dataset (Filtered)} : Sent through \href{https://send.utoronto.ca}{https://send.utoronto.ca}\\
+        Claim ID: y5ZcSRddvbj72ZRJ\\
+        Claim Passcode: MXVA796qiJnhnCxF
+    \\
+    \item [3.] Download all the files and folder that have been uploaded to MarkUs. There will be one zip file, \textbf{Plots\_Generatred} that has to be unzipped.
+    \\
+    \item [4.] Open the \textbf{requirements.txt} file that was downloaded and install the libraries mentioned.
+    \\
+    \item [5.] Open and check the \textbf{road.csv} dataset that was downloaded from MarkUs and cross reference it's contents to the filtered dataset image above. If there are discrepancies, delete the road.csv file and download it again from \href{https://send.utoronto.ca}{https://send.utoronto.ca} using the ID and Passcode above. Save the dataset in the same folder as the python files for the project and ensure that the name of the dataset file is ‘road.csv'.
+    \\
+\end{enumerate}
+
+\includegraphics[width=0.45\textwidth, center]{instruction_pics/Console 1.png}
+\\
+
+When the main file is run, the python console will pop up and ask you to fill in certain prompts. After the prompts are filled in, you will get messages similar to the ones shown in the image above. Once the plots have been generated, they can be accessed via the \textbf{Plots\_Generated} folder that is present in the project folder. Running the same inputs as the one shown in the diagram above, the following outputs are expected:
+\newpage
+\includegraphics[width=0.45\textwidth, center]{instruction_pics/shortest_route.png}
+\\
+
+\includegraphics[width=0.45\textwidth, center]{instruction_pics/multiple_routes.png}
+\\
+
+\includegraphics[width=0.45\textwidth, center]{instruction_pics/direct_route.png}
+\\
+
+\includegraphics[width=0.45\textwidth, center]{instruction_pics/shortest_time_route.png}
+\\
+\\
+
+The outputs above are all generated as separate HTML files in the Plots\_Generated folder and can be distinguished using the address bar. For example, for the first output image above, the address bar has a section which says "shortest\_route.html" which means that the outputted graph is for the shortest route for the start point and end point.
+
+\section{Changes To Plan}
+
+From the planning phase, we have made some changes to our computational plan as well as to the visualisation section. One feedback we received regarding our project proposal was that the computations we had initially planned and listed were not complex enough. Thus, we added some more computations which include finding multiple paths, the most direct path, and a path that goes through different junctions that are inputted by the user, from a start point to an end point which is inputted by the user. Moreover, we also changed our visualisation library and plan as initially we had thought of using NetworkX to visualise the graph however, we realised later on that this visualisation would not allow the visualisation to be shown on a map as we would want. Thus, after searching online, we decided to use Folium for the visualisation which allowed us to show the graph with exact coordinates on the map as well as increase interactivity with the user.
+\section{Discussion Section}
+
+Through the program that we have implemented, we are able to calculate and output various forms of routes from one location to another based on the inputs from the user. These can be in the form of the shortest, various possible routes or routes through different junctions and all this has been achieved through the use of graphs. We have also been able to factor in road traffic into our calculations and thus find a more accurate value for time any route will take. However, we want to take the data obtained from these visualizations one step further and discuss \\ \\ \textbf{\textit{How do these visualizations compare to real world situations and what problems do we encounter? Furthermore, based on the presented visualizations, can we provide any solution to the above mentioned problems.}}\\
+
+When it comes to navigation of different possible routes, there are 2 main problems that we have identified as we analyze our research question: \textbf{\textit{finding optimal path}} and \textbf{\textit{accounting for the traffic in different paths}}. With over \textit{19,000} vehicles travelling each day per mile on the major urban 'A' roads and roughly \textit{2,600} vehicles travelling each day per mile on the rural 'A' roads in the heart of London, the traffic volumes across the streets has only been increasing in volume \cite{9}. \\
+According to a statistical traffic volume report published by \textit{Department of Transport}, compared to 2018, the car and road traffic in Great Britan has increased by  2.2\% and these traffic numbers have shown and exponential increase of 29.8\% in comparison to the data collected in 1994. Other forms of transportation including pedal cycle, vans, lorry and motorways have also shown an increasing number of traffic volumes over the years \cite{10}. \\ \\
+From the data presented above, it is clear how \textbf{\textit{route optimization}} is essential both in terms of helping the user reach their desired destination faster and at the same time account for the increasing traffic over many roads spread across different cities. \\ \\
+Our \textbf{visualize\_multiple\_paths()} and \textbf{visualize\_shortest\_path()} gives a perspective into this problem and provides a solution to this by showing us how as a user, we can accurately visualize the possible options we have to reach between the specified locations and how they can chose the best path in terms of distance requirements. The \textbf{Visualization} section under \textbf{Computational Overview} talks briefly about the visualization functions mentioned above.
+\\
+The \textbf{visualize\_shortest\_time\_path()} answers the traffic issue and displays the most efficient path between the specified locations keeping in mind of the traffic volumes on different roads. It accounts for this traffic mainly for \textbf{pedal cycles} and \textbf{motorways} transport. The \textbf{Visualization} section under \textbf{Computational Overview} talks briefly about the visualization functions mentioned above along with the formula used for calculating this the time based on traffic volume.
+
+However, it is essential to note that these solutions are based on the limited dataset presented to us and are a close approximation to real world situation. It is imperative to note that though the route optimization has certainly improved over the years, even with these solutions, the road traffic has been increasingly high. The question we must then ask ourselves is : \textit{Are there other efficient solutions that can address the above mentioned problems?}  \\ \\
+One solution to this problem is the use of \textit{Intelligent Transport System (ITS)}. "ITS aims to achieve traffic efficiency by minimizing traffic problems. It enriches users with prior information about traffic, local convenience real-time running information, seat availability etc. which reduces travel time of commuters as well as enhances their safety and comfort" \cite{11}. \\
+
+\indent A research paper published by Elena Alina Stanciu, Et Al. talks about \textit{Optimization of urban road traffic in Intelligent Transport Systems}. They highlight some of the benefits of using ITS which relate to the problems we described earlier. Some of the benefits include :\textit{ decongestion of traffic on roads, increased operational efficiency, productivity increase and reduced accidents and safety increase \cite{12} .}
+\\
+
+Despite the above presented solutions with the help of our algorithms and visualizations, we did encounter and discover certain limitations to the dataset which in turn affected in us answering the problem at hand to a certain degree. Firstly, The dataset we had initially was too big to use. Since it would have taken too much time for the computations to run, we decided to restrict the function to focus on London. However, we had to restrict it further by only focusing on the major roads in London and not the minor roads. Moreover, the traffic data provided in the dataset is only a daily average and thus, the time calculated may not be an accurate representation of the actual time taken as the traffic may vary based on several factors like mode of transport and hour of the day or even the day itself!\\ \\
+\indent Another limitation to this dataset was the locations of the different junctions and the roads connecting them. Due to the lack of a more descriptive data, we did not have access to the actual coordinates of several different smaller roads that connect any two junctions. Consequently, we had to limit our visualizations to show only the direct link connecting the two junctions and not the actual geographic road path traced as done in many different modern GPS sofwares like \textit{Google Maps and Waze}. \\
+
+For further evaluations, we could modify the visual output of the graph so that perhaps there is a form of a \textit{live runner/marker} that follows the path that the user is suggested to take as is done in the case of modern GPS softwares. This could be achieved using other libraries such as pygame. Another exploration that can be done to improve this program we could look at taking gas stations and other landmarks as additional junctions which can allow for extra stops in a user's journey as this would give a much more accurate connection to a real world situation. To make this program more feasible for public use, if we can find a way to update the data in real time, we could update and optimize to give more accurate, real time updates for the estimated time taken based on current traffic volumes.
+
+\vspace{\baselineskip}
+\section{References}\par
+
+\begin{enumerate}
+   \item[1.] Furchgott, Roy. “Filling in Map Gaps With Waze Games.” Wheels Blog, 13 Sept. 2017, wheels.blogs.nytimes.com/2010/05/06/filling-in-the-map-gaps-with-waze-games.
+   \\
+   \item[2.] David Liu And Mario Badr. “CSC110/111 Course Notes.” CSC110/111 Course Notes, www.teach.cs.toronto.edu/\\%7Ecsc110y/fall/notes. Accessed 16 Apr. 2021
+   \\
+   \item[3.] Computer Science. “Graph Data Structure 4. Dijkstra’s Shortest Path Algorithm.” YouTube, 7 May 2016, www.youtube.com/watch?v=pVfj6mxhdMw.
+   \\
+   \item[4.] Coursera, and University of California San Diego. “Breadth-First Search (Continued).” Coursera, © 2021 Coursera Inc., www.coursera.org/lecture/algorithms-on-graphs/breadth-first-search-continued-WSyTa. Accessed 12 Apr. 2021.
+   \\
+   \item[5.] Coursera, and University of California San Diego. “Implementation and Analysis.” Coursera, © 2021 Coursera Inc., www.coursera.org/lecture/algorithms-on-graphs/implementation-and-analysis-gAXPb. Accessed 15
+   \\
+   \item[6.] “What’s Up with All This Traffic?” TeachEngineering.Org, 20 Jan. 2021,
+   \\www.teachengineering.org/lessons/view/usf\_traffic\_lesson01.
+   \\
+   \item[7.] Folium,https://python-visualization.github.io/folium/
+   \\
+   \item[8.] “GB Road Traffic Counts - Data.Gov.Uk.” GB Road Traffic Counts, 20 Oct. 2020, data.gov.uk/dataset/208c0e7b-353f-4e2d-8b7a-1a7118467acc/gb-road-traffic-counts.
+   \\
+   \item[9.] “General Facts and Figures about Roads and Road Use.” RAC Foundation RSS2, www.racfoundation.org/motoring-faqs/mobility#a40.
+   \\
+   \item[10.] Havaei-Ahary, Behnom. Road Traffic Estimates: Great Britain 2019. Department of Transport, 10 Sept. 2020, assets.publishing.service.gov.uk/government/uploads/system\\/uploads/attachment\_data/file/916749/road-traffic-estimates-in-great-britain-2019.pdf.
+   \newpage
+   \item[11.] Choudhary, Mahashreveta. “What Is Intelligent Transport System and How It Works?” Geospatial World, www.geospatialworld.net/blogs/what-is-intelligent-transport-system-and-how-it-works.
+   \\
+   \item[12.] Stanciu, Elena Alina, et al. “Optimization of Urban Road Traffic in Intelligent Transport Systems.” 2012 International Conference on Applied and Theoretical Electricity (ICATE), 2012, doi:10.1109/icate.2012.6403458.
+
+
+
+
+\end{enumerate}
+
+\end{document}
